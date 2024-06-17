@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.SupplyPayableMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.SupplyPayable">
+            <id property="inStoreId" column="in_store_id" jdbcType="INTEGER"/>
+            <result property="money" column="money" jdbcType="DECIMAL"/>
+            <result property="moneyPaid" column="money_paid" jdbcType="DECIMAL"/>
+            <result property="moenyPayable" column="moeny_payable" jdbcType="DECIMAL"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="invoiceType" column="invoice
+    _type" jdbcType="INTEGER"/>
+            <result property="remarks" column="remarks" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        in_store_id,money,money_paid,
+        moeny_payable,create_time,invoice_type,
+        remarks
+    </sql>
+
+    <!--
+//查询供应商总行数的方法
+public int selectSupplyCount(Supply supply);
+-->
+    <select id="selectSupplyCount" resultType="integer">
+        select count(*) from supply
+        <where>
+            <if test="supplyName != null and supplyName != ''">
+                and supply_name like concat('%', #{supplyName}, '%')
+            </if>
+            <if test="address != null and address != ''">
+                and address like concat('%', #{address}, '%')
+            </if>
+            <if test="concat != null and concat != ''">
+                and concat like concat('%', #{concat}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                and phone like concat('%', #{phone}, '%')
+            </if>
+        </where>
+    </select>
+
+    <!--
+      //分页查询仓库的方法
+      public List<Store> selectStorePage(@Param("page") Page page, @Param("store") Store store);
+    -->
+    <select id="selectSupplyPayablePage" resultType="com.bobochang.warehouse.entity.SupplyPayable">
+        select t1.*, 
+        from supply_payable t1, in_store t2 
+        where t1.in_store_id=t2.ins_id
+        <where>
+            <if test="supply.supplyName != null and supply.supplyName != ''">
+                and supply_name like concat('%', #{supply.supplyName}, '%')
+            </if>
+            <if test="supply.address != null and supply.address != ''">
+                and address like concat('%', #{supply.address}, '%')
+            </if>
+            <if test="supply.concat != null and supply.concat != ''">
+                and concat like concat('%', #{supply.concat}, '%')
+            </if>
+            <if test="supply.phone != null and supply.phone != ''">
+                and phone like concat('%', #{supply.phone}, '%')
+            </if>
+        </where>
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+</mapper>

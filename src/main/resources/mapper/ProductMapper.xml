@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.ProductMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.Product">
+            <id property="productId" column="product_id" jdbcType="INTEGER"/>
+            <result property="storeId" column="store_id" jdbcType="INTEGER"/>
+            <result property="productName" column="product_name" jdbcType="VARCHAR"/>
+            <result property="productNum" column="product_num" jdbcType="VARCHAR"/>
+            <result property="unit" column="unit" jdbcType="INTEGER"/>
+            <result property="salePrice" column="sale_price" jdbcType="DECIMAL"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+            <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        product_id,store_id,product_name,
+        product_num,unit,sale_price,
+        create_time,update_time,create_by,
+        update_by
+    </sql>
+
+    <!--
+  //查询商品总行数的方法
+  public int selectProductCount(Product product)
+-->
+    <select id="selectProductCount" resultType="integer">
+        select count(*) from
+        product t1, store t2, unit t7
+        where t1.store_id = t2.store_id
+        and t1.unit_id = t7.unit_id
+        <if test="storeId != null">
+            and t1.store_id = #{storeId}
+        </if>
+        <if test="productName != null and productName != ''">
+            and t1.product_name like concat('%',#{productName},'%')
+        </if>
+    </select>
+
+    <!--
+      //分页查询商品的方法
+      public List<Product> selectProductPage(@Param("page") Page page, @Param("product") Product product)
+    -->
+    <select id="selectProductPage" resultType="com.bobochang.warehouse.entity.Product">
+        select t1.*, t2.store_name,
+        t7.unit_name from
+        product t1, store t2,
+        unit t7
+        where t1.store_id = t2.store_id
+        and t1.unit_id = t7.unit_id
+        <if test="product.storeId != null">
+            and t1.store_id = #{product.storeId}
+        </if>
+        <if test="product.productName != null and product.productName != ''">
+            and t1.product_name like concat('%',#{product.productName},'%')
+        </if>
+        order by t1.create_time
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+
+    <!--
+      //添加商品的方法
+      public int insertProduct(Product product)
+    -->
+    <insert id="insertProduct">
+        insert into product values
+            (
+                null, #{storeId}, #{productName}, #{productNum},#{unitId},
+                #{salePrice},now(),null, #{createBy}, null
+            )
+    </insert>
+
+    <!--
+      //根据商品id修改商品的上下架状态
+      public int updateStateById(Product product)
+    -->
+    <update id="updateStateById">
+        update product set up_down_state = #{upDownState}
+        where product_id = #{productId}
+    </update>
+
+    <!--
+      //根据商品id删除商品的方法
+      public int deleteProductById(Integer productId)
+    -->
+    <delete id="deleteProductById">
+        delete from product where product_id = #{productId}
+    </delete>
+
+    <!--
+      //根据商品id修改商品的方法
+      public int updateProductById(Product product)
+    -->
+    <update id="updateProductById">
+        <!--商品上下架状态、创建时间、创建者字段值不用改-->
+        update product set store_id = #{storeId},
+        product_name = #{productName}, product_num = #{productNum},
+        unit_id = #{unitId}, sale_price = #{salePrice}, update_time = now(), update_by = #{updateBy}
+        where product_id = #{productId}
+    </update>
+
+    <!--
+      //根据商品id增加商品库存的方法
+      public int addInventById(Integer productId, Integer invent)
+    -->
+    <update id="addInventById">
+        update product set
+            product_invent = product_invent + #{param2}
+        where product_id = #{param1}
+    </update>
+
+    <!--
+      //根据商品id查询商品的方法
+      public Product selectProductById(Integer productId)
+    -->
+    <select id="selectProductById" resultType="com.bobochang.warehouse.entity.Product">
+        select * from product where product_id = #{productId}
+    </select>
+    <select id="queryAllProduct" resultType="com.bobochang.warehouse.entity.Product">
+        select product_id,product_name from product
+    </select>
+    <select id="selectAllProductName" resultType="com.bobochang.warehouse.entity.Product">
+        select * from product
+    </select>
+
+</mapper>

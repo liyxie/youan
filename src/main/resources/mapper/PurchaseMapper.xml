@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.PurchaseMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.Purchase">
+            <id property="buyId" column="buy_id" jdbcType="INTEGER"/>
+            <result property="materialId" column="material_id" jdbcType="INTEGER"/>
+            <result property="storeId" column="store_id" jdbcType="INTEGER"/>
+            <result property="buyNum" column="buy_num" jdbcType="INTEGER"/>
+            <result property="factBuyNum" column="fact_buy_num" jdbcType="INTEGER"/>
+            <result property="buyTime" column="buy_time" jdbcType="TIMESTAMP"/>
+            <result property="buyUser" column="buy_user" jdbcType="VARCHAR"/>
+            <result property="phone" column="phone" jdbcType="VARCHAR"/>
+            <result property="contractId" column="contract_id" jdbcType="INTEGER"/>
+            <result property="isIn" column="is_in" jdbcType="CHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        buy_id,material_id,store_id,
+        buy_num,fact_buy_num,buy_time,
+        buy_user,phone,contract_id,
+        is_in
+    </sql>
+
+    <!--
+  //添加采购单的方法
+  public int insertPurchase(Purchase)
+-->
+    <insert id="insertPurchase">
+        insert into buy_list
+        values (null, #{materialId}, #{storeId}, #{supplyId}, #{buyNum}, null, now(),
+                #{buyUser}, #{phone}, #{contractId}, 0, null)
+    </insert>
+
+    <!--
+     //查询采购单总行数的方法
+     public int selectPurchaseCount(Purchase purchase)
+    -->
+    <select id="selectPurchaseCount" resultType="integer">
+        select count(*)
+        from buy_list t1, material t2, store t3, contract t4
+        where t1.material_id = t2.material_id and t1.store_id = t3.store_id and t1.contract_id = t4.contract_id
+        <if test="storeId != null">
+            and t1.store_id = #{storeId}
+        </if>
+        <if test="materialName != null and materialName != ''">
+            and t2.material_name like concat('%', #{materialName}, '%')
+        </if>
+        <if test="buyUser != null and buyUser != ''">
+            and t1.buy_user like concat('%', #{buyUser}, '%')
+        </if>
+        <if test="contractName != null and contractName != ''">
+            and t4.contract_name like concat('%', #{contractName} ,'%')
+        </if>
+        <if test="isIn != null and isIn != ''">
+            and t1.is_in = #{isIn}
+        </if>
+        <if test="contractId != null and contractId != ''">
+            and t1.contract_id = #{contractId}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            and t1.buy_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            and t1.buy_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <!--
+     //分页查询采购单的方法
+     public List<Purchase> selectPurchasePage(@Param("page") Page page,
+                                  @Param("purchase") Purchase purchase)
+    -->
+    <select id="selectPurchasePage" resultType="com.bobochang.warehouse.entity.Purchase">
+        select t1.*, t2.material_name, t3.store_name, t4.contract_name, t5.supply_name
+        from buy_list t1, material t2, store t3, contract t4, supply t5
+        where t1.material_id = t2.material_id 
+          and t1.store_id = t3.store_id and t1.contract_id = t4.contract_id
+          and t1.supply_id = t5.supply_id
+        <if test="purchase.storeId != null">
+            and t1.store_id = #{purchase.storeId}
+        </if>
+        <if test="purchase.materialName != null and purchase.materialName != ''">
+            and t2.material_name like concat('%', #{purchase.materialName}, '%')
+        </if>
+        <if test="purchase.buyUser != null and purchase.buyUser != ''">
+            and t1.buy_user like concat('%', #{purchase.buyUser}, '%')
+        </if>
+        <if test="purchase.contractName != null and purchase.contractName != ''">
+            and t4.contract_name like concat('%', #{purchase.contractName} ,'%')
+        </if>
+        <if test="purchase.contractId != null and purchase.contractId != ''">
+            and t1.contract_id = #{purchase.contractId}
+        </if>
+        <if test="purchase.isIn != null and purchase.isIn != ''">
+            and t1.is_in = #{purchase.isIn}
+        </if>
+        <if test="purchase.startTime != null and purchase.startTime != ''">
+            and t1.buy_time &gt;= #{purchase.startTime}
+        </if>
+        <if test="purchase.endTime != null and purchase.endTime != ''">
+            and t1.buy_time &lt;= #{purchase.endTime}
+        </if>
+        order by t1.buy_time desc
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+    <select id="selectPurchaseByContractId" resultType="com.bobochang.warehouse.entity.Purchase">
+        select t1.*, t2.supply_name, t3.material_name from buy_list t1, supply t2, material t3
+        where contract_id = #{contractId}
+        and t1.supply_id = t2.supply_id
+        and t1.material_id = t3.material_id
+    </select>
+    <select id="selectListByContractId" resultType="com.bobochang.warehouse.entity.Purchase">
+        select * from buy_list
+        where contract_id = #{contractId}
+    </select>
+
+    <!--
+      //根据id修改采购单的方法
+      public int updatePurchaseById(Purchase purchase)
+    -->
+    <update id="updatePurchaseById">
+        update buy_list
+        set buy_num      = #{buyNum},
+            fact_buy_num = #{factBuyNum},
+            supply_id = #{supplyId}
+        where buy_id = #{buyId}
+    </update>
+
+    <!--
+      //根据id删除采购单的方法
+      public int deletePurchaseById(Integer buyId)
+    -->
+    <delete id="deletePurchaseById">
+        delete
+        from buy_list
+        where buy_id = #{buyId}
+    </delete>
+
+    <!--
+      //根据id将采购单状态改为已入库的方法
+      public int updateIsInById(Integer buyId)
+    -->
+    <update id="updateIsInById">
+        update buy_list
+        set is_in = #{isIn},
+            reason = #{reason}
+        where buy_id = #{buyId}
+    </update>
+</mapper>

@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.OutStoreMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.OutStore">
+            <id property="outsId" column="outs_id" jdbcType="INTEGER"/>
+            <result property="productId" column="product_id" jdbcType="INTEGER"/>
+            <result property="storeId" column="store_id" jdbcType="INTEGER"/>
+            <result property="outNum" column="out_num" jdbcType="INTEGER"/>
+            <result property="workRegion" column="work_region" jdbcType="VARCHAR"/>
+            <result property="custom" column="custom" jdbcType="VARCHAR"/>
+            <result property="contractId" column="contract_id" jdbcType="INTEGER"/>
+            <result property="carNumber" column="car_number" jdbcType="VARCHAR"/>
+            <result property="remarks" column="remarks" jdbcType="VARCHAR"/>
+            <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="isOut" column="is_out" jdbcType="CHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        outs_id,product_id,store_id,
+        out_num,work_region,custom,
+        contract_id,car_number,remarks,
+        create_by,create_time,is_out
+    </sql>
+
+    <!--
+  //添加出库单的方法
+  public int insertOutStore(OutStore)
+-->
+    <insert id="insertOutStore">
+        insert into out_store 
+        values(
+               null, #{productId}, #{storeId},
+               #{outNum},#{salePrice},#{workRegion},#{custom},
+               #{contractId},#{carNumber},#{remarks},
+               #{createBy}, now(), 0
+            )
+    </insert>
+
+    <!--
+      //查询出库单总行数的方法
+      public int outStoreCount(OutStore outStore);
+    -->
+    <select id="outStoreCount" resultType="integer">
+        select count(*)
+        from out_store t1, store t2, product t3, user_info t4, contract t5
+        where t1.store_id = t2.store_id and t1.product_id = t3.product_id
+        and t1.create_by = t4.user_id and t1.contract_id = t5.contract_id
+
+        <if test="storeId != null">
+            and t1.store_id = #{storeId}
+        </if>
+        <if test="productName != null and productName != ''">
+            and t3.product_name like concat('%', #{productName}, '%')
+        </if>
+        <if test="isOut != null and isOut != ''">
+            and t1.is_out = #{isOut}
+        </if>
+        <if test="contractName != null and contractName != ''">
+            and t5.contract_name = #{contractName}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            and t1.create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            and t1.create_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <!--
+      //分页查询出库单的方法
+      public List<OutStore> outStorePage(@Param("page") Page page,
+                            @Param("outStore") OutStore outStore);
+    -->
+    <select id="outStorePage" resultType="com.bobochang.warehouse.entity.OutStore">
+        select t1.*, t2.store_name, t3.product_name, t4.user_code, t6.unit_name, t5.contract_name, t3.sale_price,t1.out_num * t1.sale_price as salePriceSum
+        from out_store t1, store t2, product t3, user_info t4, contract t5, unit t6
+        where t1.store_id = t2.store_id and t1.product_id = t3.product_id
+        and t1.create_by = t4.user_id and t1.contract_id = t5.contract_id
+        and t3.unit_id = t6.unit_id
+        <if test="outStore.storeId != null">
+            and t1.store_id = #{outStore.storeId}
+        </if>
+        <if test="outStore.productName != null and outStore.productName != ''">
+            and t3.product_name like concat('%', #{outStore.productName}, '%')
+        </if>
+        <if test="outStore.isOut != null and outStore.isOut != ''">
+            and t1.is_out = #{outStore.isOut}
+        </if>
+        <if test="outStore.contractName != null and outStore.contractName != ''">
+            and t5.contract_name = #{outStore.contractName}
+        </if>
+        <if test="outStore.startTime != null and outStore.startTime != ''">
+            and t1.create_time &gt;= #{outStore.startTime}
+        </if>
+        <if test="outStore.endTime != null and outStore.endTime != ''">
+            and t1.create_time &lt;= #{outStore.endTime}
+        </if>
+        <if test="outStore.contractId != null and outStore.contractId != ''">
+            and t1.contract_id = #{outStore.contractId}
+        </if>
+        order by t1.create_time desc
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+
+    <select id="selectOutStoreSummaryCount" resultType="integer">
+        select count(*) from (
+            SELECT t1.outs_id
+            from out_store t1 JOIN
+            product t2 ON t1.product_id = t2.product_id
+            JOIN unit t3 on t2.unit_id = t3.unit_id
+            <if test="startTime != null and startTime != ''">
+                where MONTH(t1.create_time) = MONTH(#{startTime})
+            </if>
+            <if test="workRegion != null and workRegion != ''">
+                and t1.work_region like concat('%', #{workRegion}, '%')
+            </if>
+            GROUP BY work_region, product_name
+            ORDER BY work_region
+        ) AS subquery;
+    </select>
+
+
+    <select id="selectOutStoreSummaryPage" resultType="com.bobochang.warehouse.dto.OutSummaryDto">
+        SELECT t1.work_region,t2.product_name, t3.unit_name, sum(t1.out_num) as out_num, t1.sale_price, sum(t1.out_num * t1.sale_price) as money,
+               MIN(t1.create_time) AS earliest_create_time,
+               MAX(t1.create_time) AS latest_create_time,
+               COUNT(t1.work_region) as total
+        from out_store t1 JOIN
+             product t2 ON t1.product_id = t2.product_id
+            JOIN unit t3 on t2.unit_id = t3.unit_id
+        <if test="outStore.startTime != null and outStore.startTime != ''">
+            where MONTH(t1.create_time) = MONTH(#{outStore.startTime})
+        </if>
+        <if test="outStore.workRegion != null and outStore.workRegion != ''">
+            and t1.work_region like concat('%', #{outStore.workRegion}, '%')
+        </if>
+        GROUP BY work_region, product_name
+        ORDER BY work_region
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+
+    <select id="selectOutStoreSummaryMoenyByWorkRegion" resultType="java.math.BigDecimal">
+        select SUM(money) as total_amount
+        from
+            ( SELECT t1.work_region, t1.sale_price, sum(t1.out_num * t1.sale_price) as money
+              from out_store t1 JOIN
+                   product t2 ON t1.product_id = t2.product_id
+              GROUP BY work_region, product_name
+              ORDER BY work_region
+              limit #{page.limitIndex}, #{page.pageSize}
+            ) as demo
+        where work_region = #{outSummaryDto.workRegion}
+        GROUP BY work_region
+    </select>
+
+    <!--
+      //根据id将出库单状态改为已出库的方法
+      public int updateIsOutById(Integer outsId)
+    -->
+    <update id="updateIsOutById">
+        update out_store set is_out = 1 where outs_id = #{outsId}
+    </update>
+    
+    <update id="updateOutStoreById">
+        update out_store
+        set product_id=#{productId},
+            store_id=#{storeId},
+            out_num=#{outNum},
+            sale_price=#{salePrice},
+            work_region=#{workRegion},
+            custom=#{custom},
+            contract_id=#{contractId},
+            car_number=#{carNumber},
+            remarks=#{remarks}
+        where outs_id=#{outsId}
+    </update>
+
+</mapper>

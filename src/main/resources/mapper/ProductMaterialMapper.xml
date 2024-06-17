@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.ProductMaterialMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.ProductMaterial">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="productId" column="product_id" jdbcType="INTEGER"/>
+            <result property="materialId" column="material_id" jdbcType="INTEGER"/>
+            <result property="ratio" column="ratio" jdbcType="DOUBLE"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,product_id,material_id,
+        ratio
+    </sql>
+    <!--
+//查询商品总行数的方法
+public int selectProductCount(Product product)
+-->
+    <select id="selectProductMaterialCount" resultType="integer">
+        select count(*) from
+        product_material t1, user_info t2, product t3, material t4
+        where t1.create_by = t2.user_id
+        and t1.product_id = t3.product_id
+        and t1.material_id = t4.material_id
+        <if test="userName != null and userName != ''">
+            and t2.user_name like concat('%',#{userName},'%')
+        </if>
+        <if test="productId != null and productId != ''">
+            and t1.product_id = #{productId}
+        </if>
+        <if test="materialId != null and materialId != ''">
+            and t1.material_id = #{materialId}
+        </if>
+    </select>
+
+    <!--
+      //分页查询商品的方法
+      public List<Product> selectProductPage(@Param("page") Page page, @Param("product") Product product)
+    -->
+    <select id="selectProductMaterialPage" resultType="com.bobochang.warehouse.entity.ProductMaterial">
+        select t1.*,t2.user_name,t3.product_name,t4.material_name from
+        product_material t1, user_info t2, product t3, material t4
+        where t1.create_by = t2.user_id
+          and t1.product_id = t3.product_id
+          and t1.material_id = t4.material_id
+        <if test="productMaterial.userName != null and productMaterial.userName != ''">
+            and t2.user_name like concat('%',#{productMaterial.userName},'%')
+        </if>
+        <if test="productMaterial.productId != null and productMaterial.productId != ''">
+            and t1.product_id = #{productMaterial.productId}
+        </if>
+        <if test="productMaterial.materialId != null and productMaterial.materialId != ''">
+            and t1.material_id = #{productMaterial.materialId}
+        </if>
+        order by t1.create_time
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+
+    <!--
+      //添加商品的方法
+      public int insertProduct(Product product)
+    -->
+    <insert id="insertProductMaterial">
+        insert into product_material values
+            (
+                null,#{productId}, #{materialId},#{ratio},
+                now(),null, #{createBy}, null
+            )
+    </insert>
+
+    <!--
+      //根据商品id修改商品的上下架状态
+      public int updateStateById(Product product)
+    -->
+    <update id="updateStateById">
+        update product set up_down_state = #{upDownState}
+        where product_id = #{productId}
+    </update>
+
+    <!--
+      //根据商品id删除商品的方法
+      public int deleteProductById(Integer productId)
+    -->
+    <delete id="deleteProductById">
+        delete from product where product_id = #{productId}
+    </delete>
+    
+    
+    <update id="updateProductMaterialById">
+        update product_material set product_id = #{productId},
+                           material_id = #{materialId}, ratio = #{ratio},
+                           update_by = #{updateBy}, update_time=now()
+        where id = #{id}
+    </update>
+    
+    
+    <select id="selectRatioById" resultType="com.bobochang.warehouse.entity.ProductMaterial">
+        select t1.*, t2.product_name, t3.material_name, t3.material_num from product_material t1, product t2, material t3
+        where t1.product_id = t2.product_id
+        and t1.material_id = t3.material_id
+        and t1.product_id = #{productId}
+    </select>
+</mapper>

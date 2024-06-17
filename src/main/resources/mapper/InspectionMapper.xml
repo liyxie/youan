@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.InspectionMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.Inspection">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="materialId" column="material_id" jdbcType="INTEGER"/>
+            <result property="inspectionResult" column="inspection_result" jdbcType="INTEGER"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,material_id,inspection_result,
+        create_time,create_by,update_time,
+        update_by
+    </sql>
+</mapper>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.ContractEginnerMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.ContractEginner">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="contractId" column="contract_id" jdbcType="INTEGER"/>
+            <result property="productName" column="product_name" jdbcType="VARCHAR"/>
+            <result property="specs" column="specs" jdbcType="VARCHAR"/>
+            <result property="unit" column="unit" jdbcType="VARCHAR"/>
+            <result property="quantity" column="quantity" jdbcType="DOUBLE"/>
+            <result property="price" column="price" jdbcType="DECIMAL"/>
+            <result property="total" column="total" jdbcType="DECIMAL"/>
+            <result property="remarks" column="remarks" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,contract_id,product_name,
+        specs,unit,quantity,
+        price,total,remarks
+    </sql>
+    <insert id="insertContract">
+        insert into contract_eginner
+        (contract_id, product_name, specs, unit, quantity, price, total, remarks, product_id)
+        values (#{contractId},#{productName},#{specs},#{unit},#{quantity},#{price},#{total},#{remarks}, #{productId})
+    </insert>
+    <update id="updateIfRatioById">
+        update contract_eginner
+        set if_ratio = #{ifRatio}
+        where id = #{id}
+    </update>
+    <select id="selectProductById" resultType="com.bobochang.warehouse.entity.ContractEginner">
+        select * from contract_eginner where contract_id = #{contractId}
+    </select>
+    <select id="selectByProductAndContract" resultType="com.bobochang.warehouse.entity.ContractEginner">
+        select * from contract_eginner where contract_id = #{contractId} and product_id = #{productId}
+    
+    </select>
+    <select id="selectContractEginnerProductNum" resultType="com.bobochang.warehouse.entity.ContractEginner">
+        select * from contract_eginner where id = #{id}
+    </select>
+    <!--    <select id="selectProductById" resultType="com.bobochang.warehouse.entity.ContractEginner">-->
+<!--        select * from contract_eginner where contract_id = #{contractId}-->
+<!--    </select>-->
+</mapper>

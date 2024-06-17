@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.ContractMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.Contract">
+            <id property="contractId" column="contract_id" jdbcType="INTEGER"/>
+            <result property="contractName" column="contract_name" jdbcType="VARCHAR"/>
+            <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
+            <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
+            <result property="contractState" column="contract_state" jdbcType="CHAR"/>
+            <result property="files" column="files" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        contract_id,contract_name,caterial_id,
+        start_time,end_time,product_material_id,
+        contract_state,files,create_time,
+        update_time
+    </sql>
+
+
+    <!--
+        // 根据合同 id 查询合同的方法
+        public Contract findContractById(Integer contractId)
+    -->
+    <select id="findContractById" resultType="com.bobochang.warehouse.entity.Contract">
+        select *
+        from contract
+        where contract_id = #{contractId}
+    </select>
+
+    <!--
+        // 根据合同名称查询合同
+        public Contract findContractByName(String contractName)
+    -->
+    <select id="findContractByName" resultType="com.bobochang.warehouse.entity.Contract">
+        select *
+        from contract
+        where contract_name = #{contractName}
+    </select>
+
+    <!--
+        // 查询合同总行数的方法
+        public int selectContractCount(Contract contract)
+    -->
+    <select id="selectContractCount" resultType="integer">
+        select count(*) from contract
+        <where>
+            <if test="contractState != null and contractState != ''">
+                and contract_state = #{contractState}
+            </if>
+        </where>
+    </select>
+
+    <!--
+        // 分页查询合同
+        public List<Contract> selectContractPage(@Param("page")Page page, @Param("contract")Contract contract);
+    -->
+    <select id="selectContractPage" resultType="com.bobochang.warehouse.entity.Contract">
+        select t1.*, t2.product_name, t3.customer_name from contract t1 
+            left join product t2 on t1.product_id = t2.product_id
+            left join customer t3 on t1.customer_id = t3.customer_id
+         <where>
+             <if test="contract.customerId != null and contract.customerId != ''">
+                 and t1.customer_id = #{contract.customerId}
+             </if>
+             <if test="contract.contractName != null and contract.contractName != ''">
+                 and t1.contract_name like concat('%', #{contract.contractName}, '%')
+             </if>
+             <if test="contract.contractState != null and contract.contractState != ''">
+                 and t1.contract_state like concat('%', #{contract.contractState}, '%')
+             </if>
+             <if test="contract.contractId != null and contract.contractId != ''">
+                 and t1.contract_id = #{contract.contractId}
+             </if>
+             <if test="contract.ifPurchase != null and contract.ifPurchase != ''">
+                 and t1.if_purchase = #{contract.ifPurchase}
+             </if>
+         </where>
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+    <select id="selectAllContract" resultType="com.bobochang.warehouse.entity.Contract">
+        select *, customer.customer_name from contract left join customer on contract.customer_id = customer.customer_id
+    </select>
+    
+<!--    用于查询合同中某个材料所需要的量-->
+    <select id="getNeedMaterialNum" resultType="com.bobochang.warehouse.dto.MaterialNumDto">
+        SELECT ROUND(t1.product_num*t2.ratio,2) as materialNum FROM contract t1, product_material t2
+        where t1.product_id = t2.product_id
+          and material_id= #{materialId}
+          and contract_id = #{contractId}
+    </select>
+
+    <!--
+        // 添加合同 
+        public int insertContract(Contract contract);
+    -->
+    <insert id="insertContract" useGeneratedKeys="true" keyProperty="contractId">
+        insert into contract
+        (contract_name, materials, contract_state, if_purchase, product_id, product_num,start_time, end_time, files, create_time, update_time, work_region, customer_id, other_customer, project_name, company, signing_address, signing_date)
+        values (#{contractName}, #{materials}, 0, #{ifPurchase}, #{productId}, #{productNum}, #{startTime}, #{endTime}, #{files}, now(), now(), #{workRegion}, #{customerId}, #{otherCustomer},#{productName},#{company},#{signingAddress},#{signingDate})
+    </insert>
+
+    <!--
+        // 根据合同 id 修改合同状态
+        public int updateContractState(Contract contract);
+    -->
+    <update id="updateContractState">
+        update contract
+        set contract_state = #{contractState},
+            update_time=now()
+        where contract_id = #{contractId}
+    </update>
+
+    <!--
+        // 根据合同 id 修改合同昵称
+        public int updateNameById(Contract contract);
+    -->
+    <update id="updateContractById">
+        update contract
+        set contract_name=#{contractName},
+            files=#{files},
+            update_time=now(),
+            product_id=#{productId},
+            product_num=#{productNum},
+            start_time=#{startTime},
+            end_time=#{endTime},
+            if_purchase=#{ifPurchase},
+            work_region=#{workRegion},
+            customer_id=#{customerId},
+            other_customer=#{otherCustomer},
+            customer_id=#{customerId},
+            other_customer=#{otherCustomer}
+        where contract_id = #{contractId}
+    </update>
+    
+    <!--
+        修改合同的采购状态
+    -->
+    <update id="updateContractIfPurchase">
+        update contract
+        set if_purchase=#{ifPurchase}
+        where contract_id = #{contractId}
+    </update>
+</mapper>

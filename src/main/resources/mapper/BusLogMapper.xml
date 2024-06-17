@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.BusLogMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.BusLog">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="busName" column="bus_name" jdbcType="VARCHAR"/>
+            <result property="busDescrip" column="bus_descrip" jdbcType="VARCHAR"/>
+            <result property="operPerson" column="oper_person" jdbcType="VARCHAR"/>
+            <result property="operTime" column="oper_time" jdbcType="TIMESTAMP"/>
+            <result property="ipFrom" column="ip_from" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,bus_name,bus_descrip,
+        oper_person,oper_time,ip_from
+    </sql>
+    <select id="selectBuslogCount" resultType="java.lang.Integer">
+        select count(*) from bus_log
+        <where>
+            <if test="busName != null and busName != ''">
+                and bus_name like concat('%', #{busName}, '%')
+            </if>
+            <if test="busDescrip != null and busDescrip != ''">
+                and bus_descrip like concat('%', #{busDescrip}, '%')
+            </if>
+            <if test="operPerson != null and operPerson != ''">
+                and oper_person like concat('%', #{operPerson}, '%')
+            </if>
+        </where>
+    </select>
+    <select id="queryBuslogPage" resultType="com.bobochang.warehouse.entity.BusLog">
+        select * from bus_log
+        <where>
+            <if test="busLog.busName != null and busLog.busName != ''">
+                and bus_name like concat('%', #{busLog.busName}, '%')
+            </if>
+            <if test="busLog.busDescrip != null and busLog.busDescrip != ''">
+                and bus_descrip like concat('%', #{busLog.busDescrip}, '%')
+            </if>
+            <if test="busLog.operPerson != null and busLog.operPerson != ''">
+                and oper_person like concat('%', #{busLog.operPerson}, '%')
+            </if>
+        </where>
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+    <select id="getAllBusLogName" resultType="java.lang.String">
+        SELECT DISTINCT bus_name FROM `bus_log`
+    
+    </select>
+</mapper>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.FlowMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.Flow">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="instanceId" column="instance_id" jdbcType="VARCHAR"/>
+            <result property="contractId" column="contract_id" jdbcType="INTEGER"/>
+            <result property="purchaseId" column="purchase_id" jdbcType="INTEGER"/>
+            <result property="inStoreId" column="in_store_id" jdbcType="INTEGER"/>
+            <result property="outStoreId" column="out_store_id" jdbcType="INTEGER"/>
+            <result property="state" column="state" jdbcType="INTEGER"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,instance_id,contract_id,
+        purchase_id,in_store_id,out_store_id,
+        state,create_time
+    </sql>
+    <!-- 新增 -->
+    <insert id="insertFlow">
+        insert into flow
+        (instance_id, contract_id, purchase_id, in_store_id, out_store_id, state, create_time)
+        values (#{instanceId}, #{contractId}, #{purchaseId}, #{inStoreId}, #{outStoreId},#{state}, now())
+    </insert>
+
+    <update id="updateFlow" >
+        update flow
+        set purchase_id =#{purchaseId},
+            in_store_id = #{inStoreId},
+            out_store_id =#{outStoreId}
+        where instance_id = #{instanceId}
+    </update>
+    <update id="updateReasonByContract">
+        update flow
+        set reason =#{reason}
+        where contract_id = #{contractId}
+    </update>
+
+    <select id="selectByInstanceId" parameterType="java.lang.String" resultType="com.bobochang.warehouse.entity.Flow">
+        select * from flow
+        where instance_id = #{instanceId}
+    </select>
+</mapper>

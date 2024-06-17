@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.MaterialSupplyMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.MaterialSupply">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="materialId" column="material_id" jdbcType="INTEGER"/>
+        <result property="supplyId" column="supply_id" jdbcType="INTEGER"/>
+        <result property="quotation" column="quotation" jdbcType="DECIMAL"/>
+        <result property="inspectionResult" column="inspection_result" jdbcType="INTEGER"/>
+        <result property="files" column="files" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,material_id,supply_id,
+        quotation
+    </sql>
+    <update id="updateMaterialSupplyById">
+        update material_supply
+        set material_name=#{materialName},
+            quotation=#{quotation},
+            update_time=now(),
+            update_by=#{updateBy}
+        where id = #{id}
+    </update>
+    <update id="updateStateById">
+        update material_supply
+        set inspection_result = #{inspectionResult}
+        where id = #{id}
+    </update>
+    <update id="updateMaterialIdById">
+        update material_supply
+        set material_id=#{materialId}
+        where id = #{id}
+    </update>
+    <select id="queryPage" resultType="com.bobochang.warehouse.entity.MaterialSupply">
+        select t1.*, t3.supply_name
+        from
+        material_supply t1, supply t3
+        where t1.supply_id = t3.supply_id
+        <if test="materialSupply.supplyId != null and materialSupply.supplyId != ''">
+            and t1.supply_id = #{materialSupply.supplyId}
+        </if>
+        <if test="materialSupply.materialName != null and materialSupply.materialName != ''">
+            and t1.material_name like concat('%',#{materialSupply.materialName},'%')
+        </if>
+        <if test="materialSupply.inspectionResult != null and materialSupply.inspectionResult != ''">
+            and t1.inspection_result like concat('%',#{materialSupply.inspectionResult},'%')
+        </if>
+        order by t1.create_time
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+    <select id="queryCount" resultType="java.lang.Integer">
+        select count(*)
+        from
+        material_supply t1, supply t3
+        where t1.supply_id = t3.supply_id
+        <if test="supplyId != null and supplyId != ''">
+            and t1.supply_id = #{supplyId}
+        </if>
+        <if test="materialName != null and materialName != ''">
+            and t1.material_name like concat('%',#{materialName},'%')
+        </if>
+        <if test="inspectionResult != null and inspectionResult != ''">
+            and t1.inspection_result like concat('%',#{inspectionResult},'%')
+        </if>
+    </select>
+    <select id="selectMaterialSupplyById" resultType="com.bobochang.warehouse.entity.MaterialSupply">
+        select * from material_supply where id = #{id}
+    </select>
+    <select id="selectByMaterialIdAndSupply" resultType="com.bobochang.warehouse.entity.MaterialSupply">
+        select * from material_supply where material_id=#{materialId} and supply_id=#{supplyId}
+    </select>
+</mapper>             

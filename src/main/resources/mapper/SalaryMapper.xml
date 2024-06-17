@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.SalaryMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.Salary">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="userId" column="user_id" jdbcType="INTEGER"/>
+            <result property="otherSalary" column="other_salary" jdbcType="DECIMAL"/>
+            <result property="overtimeSalary" column="overtime_salary" jdbcType="DECIMAL"/>
+            <result property="withhold" column="withhold" jdbcType="DECIMAL"/>
+            <result property="netSalary" column="net_salary" jdbcType="DECIMAL"/>
+            <result property="remark" column="remark" jdbcType="VARCHAR"/>
+            <result property="status" column="status" jdbcType="CHAR"/>
+            <result property="createTime" column="create_time" jdbcType="DATE"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,other_salary,
+        overtime_salary,withhold,net_salary,
+        remark,status,create_time
+    </sql>
+    <insert id="save">
+        insert into salary
+        (user_id,salary,month_days,checkin_days,other_salary,overtime_salary,withhold,net_salary,payable_salary,remark,status,create_time)
+        values
+            (#{userId},#{salary},#{monthDays},#{checkinDays},#{otherSalary},#{overtimeSalary},#{withhold},#{netSalary},#{payableSalary},#{remark},#{status},#{createTime})
+    </insert>
+    <update id="updateSalaryById">
+        update salary
+        set other_salary = #{otherSalary},
+            withhold = #{withhold},
+            payable_salary = #{payableSalary},
+            remark = #{remark},
+            overtime_salary = #{overtimeSalary},
+            net_salary = #{netSalary},
+            status = #{status}
+        where id = #{id}
+    </update>
+    
+    <select id="querySalaryPage" resultType="com.bobochang.warehouse.entity.Salary">
+        SELECT u.real_name,u.bank_card,u.bank,u.work_type,u.salary, s.*
+        FROM `salary`s, user_info u, work_region w
+        WHERE s.user_id = u.user_id
+          and u.work_region = w.id
+        <if test="salary.realName != null and salary.realName != ''">
+            and u.real_name like concat('%', #{salary.realName}, '%')
+        </if>
+        <if test="page.startDate != null and page.startDate != ''">
+            and s.create_time = #{page.startDate}
+        </if>
+        <if test="salary.workRegion != null and salary.workRegion != ''">
+            and u.work_region = #{salary.workRegion}
+        </if>
+        order by s.create_time
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+    
+    <select id="searchUserBySalary" resultType="com.bobochang.warehouse.entity.User">
+        SELECT u.*,c.checkin_sum from user_info u,
+                (SELECT user_id, COUNT(*) as checkin_sum FROM checkin WHERE date BETWEEN #{startDate} AND #{endDate}
+                 GROUP BY user_id) c
+        where
+            u.user_id = c.user_id
+          and salary is not null
+    </select>
+    <select id="selectSalaryCount" resultType="java.lang.Integer">
+        SELECT count(*)
+        FROM `salary`s, user_info u
+        WHERE s.user_id = u.user_id
+        <if test="salary.realName != null and salary.realName != ''">
+            and u.real_name like concat('%', #{salary.realName}, '%')
+        </if>
+        <if test="page.startDate != null and page.startDate != ''">
+            and s.create_time = #{page.startDate}
+        </if>
+    </select>
+</mapper>

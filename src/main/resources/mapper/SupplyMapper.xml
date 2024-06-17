@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.SupplyMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.Supply">
+            <id property="supplyId" column="supply_id" jdbcType="INTEGER"/>
+            <result property="supplyNum" column="supply_num" jdbcType="VARCHAR"/>
+            <result property="supplyName" column="supply_name" jdbcType="VARCHAR"/>
+            <result property="concat" column="concat" jdbcType="VARCHAR"/>
+            <result property="phone" column="phone" jdbcType="VARCHAR"/>
+            <result property="address" column="address" jdbcType="VARCHAR"/>
+            <result property="isDelete" column="is_delete" jdbcType="CHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        supply_id,supply_num,supply_name,
+        concat,phone,address,
+        is_delete
+    </sql>
+
+    <!--
+      //查询所有供应商的方法
+      public List<Supply> findAllSupply()
+    -->
+    <select id="findAllSupply" resultType="com.bobochang.warehouse.entity.Supply">
+        select * from supply
+    </select>
+
+    <!--
+  //查询供应商总行数的方法
+  public int selectSupplyCount(Supply supply);
+-->
+    <select id="selectSupplyCount" resultType="integer">
+        select count(*) from supply
+        <where>
+            <if test="supplyName != null and supplyName != ''">
+                and supply_name like concat('%', #{supplyName}, '%')
+            </if>
+            <if test="address != null and address != ''">
+                and address like concat('%', #{address}, '%')
+            </if>
+            <if test="concat != null and concat != ''">
+                and concat like concat('%', #{concat}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                and phone like concat('%', #{phone}, '%')
+            </if>
+        </where>
+    </select>
+
+    <!--
+      //分页查询仓库的方法
+      public List<Store> selectStorePage(@Param("page") Page page, @Param("store") Store store);
+    -->
+    <select id="selectSupplyPage" resultType="com.bobochang.warehouse.entity.Supply">
+        select * from supply
+        <where>
+            <if test="supply.supplyName != null and supply.supplyName != ''">
+                and supply_name like concat('%', #{supply.supplyName}, '%')
+            </if>
+            <if test="supply.address != null and supply.address != ''">
+                and address like concat('%', #{supply.address}, '%')
+            </if>
+            <if test="supply.concat != null and supply.concat != ''">
+                and concat like concat('%', #{supply.concat}, '%')
+            </if>
+            <if test="supply.phone != null and supply.phone != ''">
+                and phone like concat('%', #{supply.phone}, '%')
+            </if>
+        </where>
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+
+    <!--
+     //根据供应商id删除仓库的方法
+     public int deleteSupplyById(Integer supplyId)
+    -->
+    <delete id="deleteSupplyById">
+        delete from supply where supply_id = #{supplyId}
+    </delete>
+
+    <!--
+      //根据供应商id修改的方法
+      public int updateSupplyById(Supply supply)
+    -->
+    <update id="updateSupplyById">
+        update supply set
+                          supply_name = #{supplyName}, address = #{address},
+                          concat = #{concat}, phone = #{phone}
+        where supply_id = #{supplyId}
+    </update>
+
+    <!--
+      //添加供应商的方法
+      public int insertSupply(Store store)
+    -->
+    <insert id="insertSupply">
+        insert into supply values(
+                                     null,#{supplyNum}, #{supplyName},
+                                     #{concat}, #{phone}, #{address}, 0, #{userId}
+                                 )
+    </insert>
+
+    <!--
+      //根据供应商编号查询供应商的方法
+      public Store selectStoreByNum(String storeNum)
+    -->
+    <select id="selectSupplyByNum" resultType="com.bobochang.warehouse.entity.Supply">
+        select * from supply where supply_num = #{supplyNum}
+    </select>
+    
+<!--    查询材料所有的供应商-->
+<!--    <select id="selectSupplyByMaterialId" resultType="com.bobochang.warehouse.entity.Supply">-->
+<!--        SELECT t2.supply_id,t2.supply_name,t3.quotation,t2.concat,t2.phone FROM inspection t1, supply t2, material_supply t3-->
+<!--        where t1.supply_id = t2.supply_id-->
+<!--          and t1.material_id = t3.material_id-->
+<!--          and t1.supply_id = t3.supply_id-->
+<!--        <if test="materialId != null and materialId != ''">-->
+<!--            and t1.material_id = #{materialId}-->
+<!--        </if>-->
+<!--#           and t1.inspection_result = '1'-->
+<!--        ORDER BY t3.quotation-->
+<!--    </select>-->
+    <select id="selectSupplyByMaterialId" resultType="com.bobochang.warehouse.entity.Supply">
+        SELECT t2.supply_id,t2.supply_name,t3.quotation,t2.concat,t2.phone FROM material_supply t3, supply t2
+        where t3.supply_id = t2.supply_id
+        <if test="materialId != null and materialId != ''">
+            and t3.material_id = #{materialId}
+        </if>
+        and t3.inspection_result = '2'
+        ORDER BY t3.quotation
+    </select>
+    <select id="selectOneByUserId" resultType="com.bobochang.warehouse.entity.Supply">
+        select * from supply
+        where user_id = #{userId}
+    </select>
+
+</mapper>

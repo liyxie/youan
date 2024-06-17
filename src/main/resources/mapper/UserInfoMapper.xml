@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.UserMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.User">
+            <id property="userId" column="user_id" jdbcType="INTEGER"/>
+            <result property="userCode" column="user_code" jdbcType="VARCHAR"/>
+            <result property="userName" column="user_name" jdbcType="VARCHAR"/>
+            <result property="userPwd" column="user_pwd" jdbcType="VARCHAR"/>
+            <result property="realName" column="real_name" jdbcType="VARCHAR"/>
+            <result property="userType" column="user_type" jdbcType="CHAR"/>
+            <result property="userState" column="user_state" jdbcType="CHAR"/>
+            <result property="isDelete" column="is_delete" jdbcType="CHAR"/>
+            <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        user_id,user_code,user_name,
+        user_pwd,real_name,user_type,user_state,
+        is_delete,create_by,create_time,
+        update_by,update_time
+    </sql>
+
+    <select id="findUserByCode" resultType="com.bobochang.warehouse.entity.User">
+        select * from user_info where user_code = #{userCode} and is_delete = 0
+    </select>
+
+    <select id="findUserById" resultType="com.bobochang.warehouse.entity.User">
+        select * from user_info where user_id = #{userId} and is_delete = 0
+    </select>
+    <!--
+	  //查询用户总行数的方法
+	  public int selectUserCount(User user)
+	-->
+    <select id="selectUserCount" resultType="integer">
+        select count(*) from user_info
+        <where>
+            <if test="userCode != null and userCode != ''">
+                and user_code like concat('%', #{userCode}, '%')
+            </if>
+            <if test="userType != null and userType != ''">
+                and user_type = #{userType}
+            </if>
+            <if test="userState != null and userState != ''">
+                and user_state = #{userState}
+            </if>
+            and is_delete = 0
+        </where>
+    </select>
+
+    <!--
+     //分页查询用户的方法
+	 public List<User> selectUserPage(@Param("page") Page page, @Param("user")User user)
+    -->
+    <select id="selectUserPage" resultMap="BaseResultMap">
+        select t1.*, t2.user_code getCode from user_info t1, user_info t2
+        <where>
+            and t1.create_by = t2.user_id
+            <if test="user.userCode != null and user.userCode != ''">
+                and t1.user_code like concat('%', #{user.userCode}, '%')
+            </if>
+            <if test="user.userType != null and user.userType != ''">
+                and t1.user_type = #{user.userType}
+            </if>
+            <if test="user.userState != null and user.userState != ''">
+                and t1.user_state = #{user.userState}
+            </if>
+            and t1.is_delete = 0
+        </where>
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+
+    <!--
+	  //添加用户的方法
+	  public int insertUser(User user);
+	-->
+    <insert id="insertUser">
+        insert into user_info
+        (user_name, user_code, user_pwd, real_name, user_state, is_delete, create_by, create_time)
+        values (#{userName}, #{userCode}, #{userPwd}, #{realName}, 0, 0, #{createBy}, now())
+    </insert>
+
+    <!--
+      //根据用户id修改用户状态的方法
+      public int updateUserState(User user)
+    -->
+    <update id="updateUserState">
+        update user_info set
+                             user_state = #{userState}, update_By=#{updateBy}, update_time=#{updateTime}
+        where user_id = #{userId}
+    </update>
+
+    <!--
+      //根据用户id将用户状态修改为删除状态
+      public int setUserDelete(Integer userId)
+    -->
+    <update id="setUserDelete">
+        update user_info set is_delete = 1 where user_id = #{userId}
+    </update>
+
+    <!--
+     //根据用户id修改用户昵称的方法
+     public int updateNameById(User user)
+    -->
+    <update id="updateNameById">
+        update user_info set
+                             user_name = #{userName}, update_by = #{updateBy}, update_time = now()
+        where user_id = #{userId}
+    </update>
+
+    <!--
+     //根据用户id修改密码的方法
+     public int updatePwdById(User user)
+    -->
+    <update id="updatePwdById">
+        update user_info set user_pwd = #{userPwd} where user_id = #{userId}
+    </update>
+
+    <!--    根据userid查询用户信息，用于shiro的认证和授权-->
+    <select id="searchById" parameterType="int" resultType="com.bobochang.warehouse.entity.User">
+        SELECT user_id,
+               user_code,
+               user_name,
+               user_pwd,
+               real_name,
+               user_type,
+               user_state,
+               is_delete,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        FROM user_info
+        WHERE user_id = #{userId}
+          AND user_state = 1
+          AND is_delete = 0
+    </select>
+
+    <!--    根据userid查询用户的角色信息 -->
+    <select id="searchRoleCodeById" parameterType="int" resultType="java.lang.String">
+        select role_code from user_info u
+                                  left join user_role ur on u.user_id = ur.user_id
+                                  left join role r on ur.role_id=r.role_id
+        where u.user_id = #{userId}
+    </select>
+    <select id="searchUserBySalary" resultType="com.bobochang.warehouse.entity.User">
+        SELECT user_id from user_info where salary is not null
+    </select>
+    <select id="selectAll" resultType="com.bobochang.warehouse.entity.User">
+        select * from user_info
+    </select>
+</mapper>

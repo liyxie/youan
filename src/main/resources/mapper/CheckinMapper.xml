@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.CheckinMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.Checkin">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="userId" column="user_id" jdbcType="INTEGER"/>
+        <result property="address" column="address" jdbcType="VARCHAR"/>
+        <result property="status" column="status" jdbcType="TINYINT"/>
+        <result property="risk" column="risk" jdbcType="INTEGER"/>
+        <result property="date" column="date" jdbcType="DATE"/>
+        <result property="workTime" column="work_time" jdbcType="TIMESTAMP"/>
+        <result property="offTime" column="off_time" jdbcType="TIMESTAMP"/>
+        <result property="identification" column="identification" jdbcType="TINYINT"/>
+        <result property="brand" column="brand" jdbcType="VARCHAR"/>
+        <result property="workAddr" column="work_addr" jdbcType="VARCHAR"/>
+        <result property="offAddr" column="off_addr" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,address,status,risk,
+        date,work_time,off_time,identification,brand,work_addr,off_addr,
+    </sql>
+
+    <!--  判断日期之间是否有签到记录-->
+    <select id="haveCheckin" parameterType="HashMap" resultType="integer">
+        SELECT identification
+        FROM checkin
+        WHERE user_id = #{userId}
+          AND date = CURRENT_DATE
+        LIMIT 1;
+    </select>
+
+    <select id="searchUserId" parameterType="HashMap" resultMap="BaseResultMap">
+        SELECT *
+        FROM checkin
+        WHERE user_id = #{userId}
+          AND date = CURRENT_DATE
+    </select>
+
+    <!--  查询用户当天的签到情况 CURRENT_DATE是数据库当前时间-->
+    <select id="searchTodayCheckin" parameterType="int" resultType="HashMap">
+        SELECT u.user_name,
+               CASE
+                   WHEN ck.status = 0 THEN '节假日'
+                   WHEN ck.status = 1 THEN '未下班'
+                   WHEN ck.status = 2 THEN '缺勤'
+                   WHEN ck.status = 3 THEN '正常'
+                   END as status,
+               CASE
+                   WHEN ck.risk = 1 THEN '低风险'
+                   WHEN ck.risk = 2 THEN '中风险'
+                   WHEN ck.risk = 3 THEN '高风险'
+                   END as risk,
+               ck.date,
+               ck.identification
+        FROM user_info u
+                 LEFT JOIN checkin ck ON u.user_id = ck.user_id AND ck.date = CURRENT_DATE
+        WHERE u.user_id = #{userId}
+          AND u.user_state = 1
+          AND u.is_delete = 0
+    </select>
+
+    <!--  查询用户签到的总天数-->
+    <select id="searchCheckinDays" parameterType="int" resultType="long">
+        SELECT COUNT(*) AS count
+        FROM checkin
+        WHERE user_id = #{userId}
+    </select>
+
+    <!--  查询用户所有的考勤记录-->
+    <select id="searchAllCheckin" parameterType="int" resultType="HashMap">
+        SELECT CAST(date AS CHAR) AS date,
+               CASE
+                   WHEN status = 0 THEN '节假日'
+                   WHEN status = 1 THEN '未下班'
+                   WHEN status = 2 THEN '缺勤'
+                   WHEN status = 3 THEN '正常'
+                   ELSE '未知状态'
+                   END            AS status
+        FROM checkin
+        WHERE user_id = #{userId}
+    </select>
+
+    <!--  查询用户一段时间内的考勤情况-->
+    <select id="searchWeekCheckin" parameterType="HashMap" resultType="HashMap">
+        SELECT
+        user_id,
+        CAST(date AS CHAR) AS date,
+        CASE
+        WHEN status = 0 THEN '节假日'
+        WHEN status = 1 THEN '未下班'
+        WHEN status = 2 THEN '缺勤'
+        WHEN status = 3 THEN '正常'
+        ELSE '未知状态'
+        END AS status
+        FROM checkin
+        <where>
+            <if test="userId!=null">
+                and user_id=#{userId}
+            </if>
+            AND date BETWEEN #{startDate} AND #{endDate}
+        </where>
+    </select>
+
+    <!--  添加签到数据-->
+    <insert id="insert" parameterType="com.bobochang.warehouse.entity.Checkin">
+        INSERT INTO checkin
+        SET user_id=#{userId},
+            status=#{status},
+            identification=#{identification},
+            date=#{date}
+    </insert>
+
+    <select id="selectCheckinCount" resultType="integer">
+        select count(*)
+        from checkin
+    </select>
+
+    <!--
+        // 分页查询合同
+        public List<Contract> selectContractPage(@Param("page")Page page, @Param("contract")Contract contract);
+    -->
+    <select id="selectCheckinPage" resultType="HashMap">
+        SELECT c.user_id as userId, u.user_name as userName, COUNT(c.user_id) as attendanceDays, c.work_addr as
+        workAddr,c.off_addr as offAddr,
+        u.real_name as realName
+        FROM checkin c
+        JOIN user_info u ON c.user_id = u.user_id
+        <where>
+            <if test="page.realName != null and page.realName != ''">
+                AND u.real_name like concat('%', #{page.realName}, '%')
+            </if>
+            <if test="page.startDate != null and page.startDate != ''">
+                AND DATE(c.date) &gt;= DATE(#{page.startDate})
+            </if>
+            <if test="page.endDate != null and page.endDate != ''">
+                AND DATE(c.date) &lt;= DATE(#{page.endDate})
+            </if>
+        </where>
+        GROUP BY c.user_id
+        LIMIT #{page.limitIndex}, #{page.pageSize}
+    </select>
+    <select id="searchRankingWorkByUserId" resultType="java.lang.String">
+        /*通过当天日期，按照 workTime 排行，得到当前 userId 的序号*/
+        SELECT
+               work_time_rank
+        FROM (SELECT user_id,
+                     work_time,
+                     RANK() OVER (PARTITION BY date ORDER BY work_time) AS work_time_rank
+              FROM checkin
+              WHERE date = CURRENT_DATE
+                AND work_time IS NOT NULL) AS ranked_checkin
+        WHERE user_id = #{userId}
+        ORDER BY work_time;
+    </select>
+    <select id="searchRankingOffByUserId" resultType="java.lang.String">
+        /*通过当天日期，按照 offTime 排行，得到当前 userId 的序号*/
+        SELECT off_time_rank
+        FROM (SELECT user_id,
+                     off_time,
+                     RANK() OVER (PARTITION BY date ORDER BY off_time) AS off_time_rank
+              FROM checkin
+              WHERE date = CURRENT_DATE
+                AND off_time IS NOT NULL) AS ranked_checkin
+        WHERE user_id = #{userId}
+        ORDER BY off_time;
+    </select>
+</mapper>

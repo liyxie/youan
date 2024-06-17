@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.RoleAuthMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.RoleAuth">
+            <id property="roleAuthId" column="role_auth_id" jdbcType="INTEGER"/>
+            <result property="roleId" column="role_id" jdbcType="INTEGER"/>
+            <result property="authId" column="auth_id" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        role_auth_id,role_id,auth_id
+    </sql>
+</mapper>

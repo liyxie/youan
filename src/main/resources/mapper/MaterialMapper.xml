@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bobochang.warehouse.mapper.MaterialMapper">
+
+    <resultMap id="BaseResultMap" type="com.bobochang.warehouse.entity.Material">
+            <id property="materialId" column="material_id" jdbcType="INTEGER"/>
+            <result property="storeId" column="store_id" jdbcType="INTEGER"/>
+            <result property="materialName" column="material_name" jdbcType="VARCHAR"/>
+            <result property="materialNum" column="material_num" jdbcType="VARCHAR"/>
+            <result property="unitId" column="unit_id" jdbcType="INTEGER"/>
+            <result property="introduce" column="introduce" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="createBy" column="create_by" jdbcType="INTEGER"/>
+            <result property="updateBy" column="update_by" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        material_id,store_id,material_name,
+        material_num,unit,introduce,
+        create_time,update_time,create_by,
+        update_by
+    </sql>
+
+    <!--
+      //查询商品总行数的方法
+      public int selectProductCount(Product product)
+    -->
+    <select id="selectMaterialCount" resultType="integer">
+        select count(*)
+        from
+        material t1, store t2, unit t6
+        where t1.store_id = t2.store_id
+        and t1.unit_id = t6.unit_id
+        <if test="storeId != null">
+            and t1.store_id = #{storeId}
+        </if>
+        <if test="materialName != null and materialName != ''">
+            and t1.material_name like concat('%',#{materialName},'%')
+        </if>
+        <!--
+          如果方法参数Product对象的isOverDate属性值为1(查询已过期商品),则查询
+          当前时间大于product表中supp_date列的时间的商品;
+          反之如果方法参数Product对象的isOverDate属性值为0(查询未过期商品),则
+          查询当前时间小于product表中supp_date列的时间的商品;
+        -->
+    </select>
+
+    <!--
+      //分页查询商品的方法
+      public List<Product> selectProductPage(@Param("page") Page page, @Param("product") Product product)
+    -->
+    <select id="selectMaterialPage" resultType="com.bobochang.warehouse.entity.Material">
+        select t1.*, t2.store_name, t6.unit_name
+        from
+        material t1, store t2, unit t6
+        where t1.store_id = t2.store_id
+          and t1.unit_id = t6.unit_id
+        <if test="material.storeId != null">
+            and t1.store_id = #{material.storeId}
+        </if>
+        <if test="material.materialName != null and material.materialName != ''">
+            and t1.material_name like concat('%',#{material.materialName},'%')
+        </if>
+        order by t1.create_time
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+
+    <!--
+      //根据商品id删除商品的方法
+      public int deleteProductById(Integer productId)
+    -->
+    <delete id="deleteProductById">
+        delete from product where product_id = #{productId}
+    </delete>
+
+    <!--
+      //根据商品id修改商品的方法
+      public int updateProductById(Product product)
+    -->
+    <update id="updateMaterialById">
+        <!--商品上下架状态、创建时间、创建者字段值不用改-->
+        update material set store_id = #{storeId},
+        material_name = #{materialName}, material_num = #{materialNum},
+        introduce = #{introduce}, unit_id = #{unitId},
+        update_time = now(), update_by = #{updateBy}
+        where material_id = #{materialId}
+    </update>
+
+    <!--
+      //根据商品id增加商品库存的方法
+      public int addInventById(Integer productId, Integer invent)
+    -->
+    <update id="addInventById" parameterType="com.bobochang.warehouse.entity.InStore">
+        update material set
+            material_num = material.material_num + #{inNum}
+        where material_id = #{materialId}
+    </update>
+    
+    <update id="reduceById">
+        update material set
+            material_num = material.material_num - #{materialNum}
+        where material_id = #{materialId}
+    </update>
+
+    <!--
+      //根据商品id查询商品的方法
+      public Product selectProductById(Integer productId)
+    -->
+    <select id="selectProductById" resultType="com.bobochang.warehouse.entity.Product">
+        select * from product where product_id = #{productId}
+    </select>
+    <select id="queryAllMaterial" resultType="com.bobochang.warehouse.entity.Material">
+        select t1.*, t2.unit_name from material t1, unit t2 where t1.unit_id = t2.unit_id
+    </select>
+    <select id="selectMaterialCountByProduct" resultType="java.lang.Integer">
+        SELECT count(*) FROM contract t1, product_material t2, material t3, store t4, unit t5
+        where t1.product_id = t2.product_id
+        and t2.material_id = t3.material_id
+        and t3.store_id = t4.store_id
+        and t3.unit_id = t5.unit_id
+        and t1.contract_id = #{contractId}
+    </select>
+    <select id="selectMaterialPageByProduct" resultType="com.bobochang.warehouse.entity.Material">
+        SELECT t3.*, t4.store_name, t5.unit_name FROM contract t1, product_material t2, material t3, store t4, unit t5
+        where t1.product_id = t2.product_id
+        and t2.material_id = t3.material_id
+        and t3.store_id = t4.store_id
+        and t3.unit_id = t5.unit_id
+        and t1.contract_id = #{contractId}
+        order by t3.create_time
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+    <select id="selectMaterialByName" resultType="com.bobochang.warehouse.entity.Material">
+        select * from material where material_name = #{materialName}
+    </select>
+    <select id="selectMaterialCountByContract" resultType="java.lang.Integer">
+        
+    </select>
+    <select id="selectMaterialPageByContract" resultType="com.bobochang.warehouse.entity.Material">
+        SELECT
+            m.*,
+            u.unit_name,
+            s.store_name,
+            jt.num as need_num
+        FROM
+            contract c
+                CROSS JOIN
+            JSON_TABLE(c.materials, '$[*]' COLUMNS (
+                id INT PATH '$.id',
+                num double PATH '$.num'
+                )) AS jt
+                left join
+            material as m on jt.id = m.material_id
+                left join
+            unit as u on m.unit_id = u.unit_id
+                left join
+            store as s on m.store_id = s.store_id
+        WHERE
+            c.contract_id = #{contractId}
+        limit #{page.limitIndex}, #{page.pageSize}
+    </select>
+    <select id="selectMaterialByContract" resultType="com.bobochang.warehouse.entity.Material">
+        SELECT
+            m.*,
+            u.unit_name,
+            s.store_name,
+            jt.num as need_num
+        FROM
+            contract c
+                CROSS JOIN
+            JSON_TABLE(c.materials, '$[*]' COLUMNS (
+                id INT PATH '$.id',
+                num double PATH '$.num'
+                )) AS jt
+                left join
+            material as m on jt.id = m.material_id
+                left join
+            unit as u on m.unit_id = u.unit_id
+                left join
+            store as s on m.store_id = s.store_id
+        WHERE
+            c.contract_id = #{contractId}
+    </select>
+</mapper>
